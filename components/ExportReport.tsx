@@ -1,6 +1,8 @@
-import { Select, Form, DatePicker, Button, Row, Col } from 'antd'
+import { Select, Form, DatePicker, Button, Modal} from 'antd'
 import axios from 'axios';
+import dayjs from 'dayjs';
 import { saveAs } from 'file-saver';
+import moment from 'moment';
 
 const layout = {
   labelCol: {
@@ -16,52 +18,34 @@ const tailLayout = {
     span: 16,
   },
 };
-function dataURItoBlob(dataURI:string) {
-  // convert base64 to raw binary data held in a string
-  // doesn't handle URLEncoded DataURIs - see SO answer #6850276 for code that does this
-  var byteString = atob(dataURI.split(',')[1]);
-
-  // separate out the mime component
-  var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
-
-  // write the bytes of the string to an ArrayBuffer
-  var ab = new ArrayBuffer(byteString.length);
-
-  // create a view into the buffer
-  var ia = new Uint8Array(ab);
-
-  // set the bytes of the buffer to the correct values
-  for (var i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-  }
-
-  // write the ArrayBuffer to a blob, and you're done
-  var blob = new Blob([ab], {type: mimeString});
-  return blob;
-
-}
 
 function ExportReport() {
   const [form] = Form.useForm()
-  const downloadPDF = async()=>{
+  const downloadXLXS = async()=>{
     const data = form.getFieldsValue()
-    const dataURI = await axios.post('/test',data)
-    console.log('data',data)
-    // const fileName = 'test'
-    //   saveAs(dataURItoBlob(''), fileName);
-    console.log(dataURI.data)
-  
+    try{
+      const dataURI = await axios.post('/dowload-xlsx',data,{responseType:'arraybuffer'})
+      const blob = new Blob([dataURI.data as any])
+      saveAs(blob,`${data.report}-${dayjs(data.selectedDate).format('YYYY-MM-DD')}.xlsx`)
+    }
+    catch(e){
+      Modal.error({
+        title: 'มีข้อผิดพลาด',
+        content: 'ไม่สามารถดาวน์โหลดไฟล์ได้',
+      });
+    }
+
   }
   return (
-    
+
       <Form
       form={form}
       {...layout}
       initialValues={
         {
           station:'สถานีประปาพงเพชร',
-          report :'รายงาน',
-          date:null,
+          report :'SL_SHOP2',
+          selectedDate:moment()
         }
       }
       >
@@ -71,7 +55,7 @@ function ExportReport() {
           {required:true}
         ]}>
           <Select>
-              <Select.Option value="สถานีประปาพงเพชร">สถานีประปาพงเพชร</Select.Option>
+              <Select.Option value="สถานีประปาสำแล">สถานีประปาสำแล</Select.Option>
           </Select>
         </Form.Item>
         <Form.Item label="เลือกรายงาน" name="report"
@@ -79,10 +63,12 @@ function ExportReport() {
           {required:true}
         ]}>
           <Select>
-              <Select.Option value="รายงาน">รายงาน</Select.Option>
+          <Select.Option value="SL_SHOP2">SL_SHOP2</Select.Option>
+          <Select.Option value="SL_SHOP3">SL_SHOP3</Select.Option>
+          <Select.Option value="SL_SHOP4">SL_SHOP4</Select.Option>
           </Select>
         </Form.Item>
-        <Form.Item label="วันที่ของรายงาน" name="filterDate"
+        <Form.Item label="วันที่ของรายงาน" name="selectedDate"
         rules={[
           {required:true}
         ]}>
@@ -90,8 +76,7 @@ function ExportReport() {
         </Form.Item>
 
         <Form.Item {...tailLayout}>
-          <Button style={{marginRight:'24px'}} type="primary" htmlType="button" onClick={downloadPDF}>PDF</Button>
-          <Button type="primary" htmlType="button">XLXS</Button>
+          <Button style={{marginRight:'24px'}} type="primary" htmlType="button" onClick={downloadXLXS}>XLXS</Button>
         </Form.Item>
       </Form>
     

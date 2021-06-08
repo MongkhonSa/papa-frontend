@@ -1,0 +1,13 @@
+version: "3.1"
+
+services:
+  sql-server:
+    image: mcr.microsoft.com/mssql/server:2019-GA-ubuntu-16.04
+    ports:
+      - 1433:1433
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Password64*
+      - MSSQL_PID=Standard
+    volumes:
+      - /var/opt/mssql
